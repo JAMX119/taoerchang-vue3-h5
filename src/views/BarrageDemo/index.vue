@@ -14,7 +14,8 @@ const handleSendBarrageClick = () => {
   router.push('/send_barrage')
 }
 
-const danmus = ref(['danmu1', 'danmu2', 'danmu3', '...'])
+const danmus = ref(['danmu1', 'danmu2', 'danmu3', 'danmu4', 'danmu5'])
+const danmakuRef = ref<InstanceType<typeof Danmaku> | null>(null)
 </script>
 
 <template>
@@ -26,9 +27,22 @@ const danmus = ref(['danmu1', 'danmu2', 'danmu3', '...'])
     </header>
     <!-- 首页主要内容 -->
     <main class="flex flex-1 flex-col items-center justify-center">
-      <div class="!px-4">
-        <Danmaku :danmus="danmus" style="height: 100px; width: 300px"></Danmaku>
-        <img src="@/assets/images/large_screen.png" alt="large_screen" />
+      <div class="!mx-4 relative min-w-120 min-h-62">
+        <Danmaku
+          class="!absolute top-0 left-0 w-full h-full"
+          loop
+          useSlot
+          :danmus="danmus"
+          ref="danmakuRef"
+        >
+          <template #dm="{ danmu }">
+            <div class="danmu-item">
+              <div class="text-[#fff]">{{ danmu }}</div>
+            </div>
+          </template>
+        </Danmaku>
+        <div class="w-full !h-62 bg-black"></div>
+        <!-- <img src="@/assets/images/large_screen.png" alt="large_screen" /> -->
       </div>
       <div class="w-50 !mt-20" @click="handleSendBarrageClick">
         <img src="@/assets/images/send_barrage.png" alt="btn" />

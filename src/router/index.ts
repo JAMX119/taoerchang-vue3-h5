@@ -13,6 +13,11 @@ const router = createRouter({
       name: 'send_barrage',
       component: () => import('@/views/SendBarrage/index.vue'),
     },
+    {
+      path: '/barrage_demo',
+      name: 'barrage_demo',
+      component: () => import('@/views/BarrageDemo/index.vue'),
+    },
   ],
 })
 
