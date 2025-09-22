@@ -1,0 +1,143 @@
+@import url('./assets/font_3jhvpzb04hq/iconfont.css');
+
+@import 'tailwindcss';
+
+/* 全局样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 移动端适配 */
+html {
+  font-size: 16px;
+  /* 使用rem单位适配不同屏幕 */
+  /* 1rem = 16px (基础尺寸) */
+  /* 实际项目中可根据设计稿调整基础尺寸 */
+}
+
+html,
+body {
+  /* 防止页面滚动时出现空白区域 */
+  overflow-x: hidden;
+  /* 修复iOS上的橡皮筋效果 */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 响应式字体大小 */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 13px;
+  }
+}
+
+/* 微信H5特有样式 */
+/* 防止点击时出现高亮 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 优化按钮触摸体验 */
+button,
+[role='button'],
+[class*='btn'] {
+  touch-action: manipulation;
+}
+
+/* 优化输入框在移动端的体验 */
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* 去除iOS上输入框的内阴影 */
+input,
+textarea {
+  -webkit-border-radius: 0;
+}
+
+/* 修复iOS上滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* 自定义工具类 */
+.h5-safe-top {
+  /* 适配iPhone的刘海屏顶部安全区域 */
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.h5-safe-bottom {
+  /* 适配iPhone的底部安全区域 */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 防止文字被选中 */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 优化图片显示 */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 修复微信浏览器中fixed定位的问题 */
+.fixed {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* 横竖屏切换样式 */
+@media screen and (orientation: landscape) {
+  /* 横屏时的特殊样式 */
+  body {
+    font-size: 14px;
+  }
+}
