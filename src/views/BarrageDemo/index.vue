@@ -1,16 +1,20 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import Danmaku from 'danmaku-vue'
 import { useRouter } from 'vue-router'
 import AppBackground from '@/components/background.vue'
 
 defineOptions({
   name: 'HomeIndex',
 })
-
+// 路由
 const router = useRouter()
-
+// 点击发送弹幕
 const handleSendBarrageClick = () => {
   router.push('/send_barrage')
 }
+
+const danmus = ref(['danmu1', 'danmu2', 'danmu3', '...'])
 </script>
 
 <template>
@@ -23,6 +27,7 @@ const handleSendBarrageClick = () => {
     <!-- 首页主要内容 -->
     <main class="flex flex-1 flex-col items-center justify-center">
       <div class="!px-4">
+        <Danmaku :danmus="danmus" style="height: 100px; width: 300px"></Danmaku>
         <img src="@/assets/images/large_screen.png" alt="large_screen" />
       </div>
       <div class="w-50 !mt-20" @click="handleSendBarrageClick">
