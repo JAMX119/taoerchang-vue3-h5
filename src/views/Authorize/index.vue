@@ -48,7 +48,7 @@ const handleWechatAuth = async () => {
       try {
         const authUrl = await store.actionGetAuthUrl(redirectUri)
         // 跳转到微信授权页面
-        window.location.href = authUrl
+        window.location.href = authUrl as string
       } catch (error) {
         console.error('获取授权链接失败，使用前端构建的链接:', error)
       }

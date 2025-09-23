@@ -1,5 +1,4 @@
 // 微信授权相关工具函数
-
 import type { WechatUserInfo, WechatAuthScope, WechatAuthResult } from '@/types'
 
 // 微信APPID（实际项目中应从环境变量获取）
