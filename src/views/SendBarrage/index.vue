@@ -132,7 +132,7 @@ const isPlaceholder = computed(() => {
   <Teleport to="body">
     <div
       v-show="visible"
-      class="fixed flex-col top-0 left-0 right-0 flex items-center justify-center z-50 h-full bg-white/50"
+      class="mask_layer fixed flex-col top-0 left-0 right-0 flex items-center justify-center z-50 h-full bg-white/50"
     >
       <div class="relative">
         <img class="w-80" src="@/assets/images/send_success.png" alt="send-success" />
@@ -158,5 +158,9 @@ const isPlaceholder = computed(() => {
 
 .animate-fade-in-up {
   animation: fade-in-up 0.3s ease-out;
+}
+
+.mask_layer {
+  background-color: rgba(255, 255, 255, 0.5);
 }
 </style>
