@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppBackground from '@/components/background.vue'
 import { useRouter } from 'vue-router'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 defineOptions({
   name: 'SendBarrageIndex',
 })
@@ -35,15 +35,24 @@ const handleColorSelect = (color: string) => {
 const visible = ref(false)
 // 发送按钮点击
 const handleSendClick = async () => {
+  if (barrageText.value.trim() === '') {
+    return
+  }
   visible.value = true
   document.body.style.height = '100vh'
   document.body.style.overflow = 'hidden'
 }
+// 组件挂载后启动打字动画
+onMounted(() => {
+  startTypingAnimation()
+})
+
 // 关闭弹窗
 const handleCloseClick = () => {
   visible.value = false
   document.body.style.height = 'auto'
   document.body.style.overflow = 'auto'
+  router.replace({ name: 'home' })
 }
 // 弹幕内容
 const barrageText = ref('')
@@ -52,6 +61,65 @@ const isPlaceholder = computed(() => {
     return true
   }
   return false
+})
+
+// 打字动画相关
+const placeholderText = '发个友善的弹幕见证当下(输入文字区)'
+const displayedText = ref('')
+const typingIndex = ref(0)
+const typingSpeed = 100 // 打字速度，毫秒
+const timerId = ref<number | null>(null) // 保存定时器ID
+const showColorSetting = ref(false) // 控制颜色设置框显示
+
+// 清除定时器函数
+const clearTypingTimer = () => {
+  if (timerId.value !== null) {
+    clearTimeout(timerId.value)
+    timerId.value = null
+  }
+}
+
+// 打字动画函数
+const startTypingAnimation = () => {
+  // 清除之前的定时器，避免多个定时器同时运行
+  clearTypingTimer()
+
+  if (typingIndex.value < placeholderText.length) {
+    displayedText.value = placeholderText.slice(0, typingIndex.value + 1)
+    typingIndex.value++
+    timerId.value = setTimeout(() => {
+      startTypingAnimation()
+    }, typingSpeed)
+  } else {
+    // 动画完成后，短暂延迟显示颜色设置框
+    timerId.value = setTimeout(() => {
+      showColorSetting.value = true
+    }, 500)
+    // 完成一轮后，短暂停顿再重新开始
+    // timerId.value = setTimeout(() => {
+    //   typingIndex.value = 0
+    //   displayedText.value = ''
+    //   startTypingAnimation()
+    // }, 2000)
+  }
+}
+
+// 监听barrageText变化，当有输入时暂停动画
+watch(barrageText, (newValue) => {
+  if (newValue.trim() !== '') {
+    typingIndex.value = placeholderText.length // 暂停动画
+    clearTypingTimer() // 清除定时器
+  } else if (isPlaceholder.value) {
+    // 清空输入时重新开始动画
+    typingIndex.value = 0
+    displayedText.value = ''
+    startTypingAnimation()
+  }
+})
+
+// 组件卸载时清除定时器，避免内存泄漏
+onUnmounted(() => {
+  clearTypingTimer()
 })
 </script>
 
@@ -66,101 +134,152 @@ const isPlaceholder = computed(() => {
         <span>返回</span>
       </div>
     </header>
-    <main class="flex-1 flex flex-col items-center !pt-24">
+    <main class="flex-1 flex flex-col items-center !pt-6">
       <!-- 输入框 -->
       <div class="!mx-4 relative">
         <img src="@/assets/images/input_box.png" alt="input-box" />
-        <div class="textarea absolute bottom-0 h-[60%] left-0 w-full !p-[3%]">
-          <div v-show="isPlaceholder" class="placeholder absolute !text-4xl text-white font-bold">
-            发个友善的弹幕见证当下(输入文字区)
+        <div class="textarea absolute bottom-0 h-[60%] left-0 w-full !py-[5%] !px-[7%]">
+          <div
+            v-show="isPlaceholder"
+            class="placeholder absolute left-[6%] right-[6%] !text-4xl text-white font-bold text-justify"
+          >
+            {{ displayedText }}
+            <span
+              v-if="isPlaceholder && typingIndex < placeholderText.length"
+              class="inline-block w-4 h-8 bg-white ml-1 animate-blink"
+            ></span>
             <span class="icon iconfont icon-qianbi !text-4xl"></span>
           </div>
           <img
+            v-show="!visible"
             class="absolute w-[20%] bottom-[8%] right-[5%]"
             src="@/assets/images/black_pot.png"
           />
           <textarea
             v-model="barrageText"
-            class="relative z-[1] w-full h-[60%] bg-transparent resize-none outline-none font-bold text-white !text-4xl"
+            :style="{ color: selectedColor }"
+            class="relative z-[1] w-full h-[60%] bg-transparent resize-none outline-none font-bold !text-4xl"
           ></textarea>
         </div>
       </div>
       <!-- 颜色设置 -->
-      <div class="color-setting w-full max-w-md mx-auto overflow-hidden !mt-10">
-        <!-- 颜色设置标题 -->
-        <div
-          class="bg-[#d65879] text-white font-bold text-lg !px-4 !py-2 text-center inline-block border-2 border-white rounded-t-xl shadow-[#333_0_5px_6px]"
-        >
-          颜色设置
-        </div>
-        <div class="bg-white !p-2 rounded-xl !mt-[-0.5rem] relative">
-          <div class="border border-[#ee829b] rounded-xl !p-4">
-            <!-- 颜色值显示 -->
-            <div class="px-4 py-3 flex items-center space-x-3">
-              <div
-                class="flex-1 bg-[#ed7b9e] text-white !px-2 rounded !mr-4 h-8 font-bold text-2xl text-left uppercase"
-              >
-                {{ selectedColor }}
-              </div>
-              <div class="w-30 h-8 border border-[#ed7b9e] rounded"></div>
+      <transition name="fade-in">
+        <div v-show="showColorSetting">
+          <div class="color-setting w-full !px-15 overflow-hidden !mt-10">
+            <!-- 颜色设置标题 -->
+            <div
+              class="bg-[#d65879] text-white font-bold text-lg !px-4 !pt-2 !pb-6 text-center inline-block border-2 border-white rounded-t-xl shadow-[#333_0_5px_6px]"
+            >
+              颜色设置
             </div>
+            <div class="bg-white !p-2 rounded-3xl !mt-[-1.5rem] relative">
+              <div class="border border-[#ee829b] rounded-3xl !p-4">
+                <!-- 颜色值显示 -->
+                <div class="px-4 py-3 flex items-center space-x-3">
+                  <div
+                    class="flex-1 bg-[#ed7b9e] text-white !px-2 rounded !mr-4 h-8 font-bold text-2xl text-left uppercase"
+                  >
+                    {{ selectedColor }}
+                  </div>
+                  <div
+                    class="w-30 h-8 border border-[#ed7b9e] rounded"
+                    :style="{ 'background-color': selectedColor }"
+                  ></div>
+                </div>
 
-            <!-- 颜色选择按钮 -->
-            <div class="!p-4 grid grid-cols-7 gap-4">
-              <div
-                v-for="(color, index) in colorOptions"
-                :key="index"
-                @click="handleColorSelect(color)"
-                :style="{ backgroundColor: color }"
-                :class="{
-                  'border border-gray': color === '#ffffff',
-                  'ring-2 ring-offset-2 ring-[#e84075]': selectedColor === color,
-                }"
-                class="w-8 h-8 rounded-full cursor-pointer transition-transform hover:scale-110"
-              ></div>
+                <!-- 颜色选择按钮 -->
+                <div class="!p-4 grid grid-cols-7 gap-4">
+                  <div
+                    v-for="(color, index) in colorOptions"
+                    :key="index"
+                    @click="handleColorSelect(color)"
+                    :style="{ backgroundColor: color }"
+                    :class="{
+                      'border border-gray': color === '#ffffff',
+                      'ring-2 ring-offset-2 ring-[#e84075]': selectedColor === color,
+                    }"
+                    class="w-8 h-8 rounded-3xl cursor-pointer transition-transform hover:scale-110"
+                  ></div>
+                </div>
+              </div>
             </div>
           </div>
+          <!-- 发送按钮 -->
+          <div class="!my-15 flex items-center justify-center" @click="handleSendClick">
+            <img v-show="!visible" class="w-40" src="@/assets/images/send_button.png" />
+          </div>
         </div>
-      </div>
-      <!-- 发送按钮 -->
-      <div class="!my-20" @click="handleSendClick">
-        <img class="w-50" src="@/assets/images/send_button.png" />
-      </div>
+      </transition>
     </main>
   </AppBackground>
   <!-- 弹窗 -->
   <Teleport to="body">
-    <div
-      v-show="visible"
-      class="mask_layer fixed flex-col top-0 left-0 right-0 flex items-center justify-center z-50 h-full bg-white/50"
-    >
-      <div class="relative">
-        <img class="w-80" src="@/assets/images/send_success.png" alt="send-success" />
-        <div class="w-15 h-15 absolute right-10 top-2" @click="handleCloseClick"></div>
+    <transition name="dialog">
+      <div
+        v-show="visible"
+        class="mask_layer fixed flex-col top-0 left-0 right-0 flex items-center justify-center z-50 h-full bg-white/90"
+      >
+        <div class="relative !mt-50">
+          <img class="w-80" src="@/assets/images/send_success.png" alt="send-success" />
+          <div class="w-15 h-15 absolute right-10 top-2" @click="handleCloseClick"></div>
+        </div>
+        <img class="w-40 !mt-20" src="@/assets/images/bot.png" alt="bot" />
       </div>
-      <img class="w-40 !mt-30" src="@/assets/images/bot.png" alt="bot" />
-    </div>
+    </transition>
   </Teleport>
 </template>
 
 <style scoped>
-/* 动画效果 */
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) translateX(-50%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) translateX(-50%);
-  }
+/* 淡入动画 */
+.fade-in-enter-active,
+.fade-in-leave-active {
+  transition: all 0.8s ease;
 }
 
-.animate-fade-in-up {
-  animation: fade-in-up 0.3s ease-out;
+.fade-in-enter-from,
+.fade-in-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
 }
 
 .mask_layer {
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* 弹窗过渡动画 */
+.dialog-enter-active,
+.dialog-leave-active {
+  transition: all 0.3s ease;
+}
+
+.dialog-enter-from,
+.dialog-leave-to {
+  opacity: 0;
+}
+
+.dialog-enter-from > div,
+.dialog-leave-to > div {
+  transform: scale(0.8);
+  opacity: 0;
+}
+
+.dialog-enter-active > div,
+.dialog-leave-active > div {
+  transition: all 0.3s ease;
+}
+
+/* 闪烁光标动画 */
+.animate-blink {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 </style>

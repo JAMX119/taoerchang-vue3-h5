@@ -11,3 +11,4 @@ export * from './api/wechat'
 
 // 导出声明文件
 /// <reference path="./danmaku-vue.d.ts" />
+/// <reference path="./mockjs.d.ts" />

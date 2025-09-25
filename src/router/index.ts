@@ -25,22 +25,21 @@ const router = createRouter({
       component: () => import('@/views/SendBarrage/index.vue'),
     },
     {
-      path: '/barrage_demo',
-      name: 'barrage_demo',
-      component: () => import('@/views/BarrageDemo/index.vue'),
+      path: '/large_screen',
+      name: 'large_screen',
+      component: () => import('@/views/LargeScreen/index.vue'),
     },
   ],
 })
 
 router.beforeEach((to, from) => {
-  console.log('to', to)
-  console.log('from', from)
   const { isLoggedIn } = useUserInfoStore()
-  console.log('isLoggedIn', isLoggedIn)
+  if (to.name == 'large_screen' && !isLoggedIn) {
+    return true
+  }
   if (to.name !== 'authorize' && !isLoggedIn) {
     return { name: 'authorize' }
   }
-  // 返回 false 以取消导航
   return true
 })
 

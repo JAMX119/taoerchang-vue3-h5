@@ -3,6 +3,20 @@
 /* @import 'tailwindcss'; */
 @import 'weapp-tailwindcss';
 
+/* 假设字体文件放在 src/assets/fonts 目录下 */
+@font-face {
+  font-family: 'Source Han Sans';
+  src: url('@/assets/fonts/SourceHanSansOLD-Medium-2.otf');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Source Han Sans';
+  src: url('@/assets/fonts/SourceHanSansOLD-Bold-2.otf');
+  font-weight: 700;
+  font-style: normal;
+}
+
 /* 全局样式重置 */
 * {
   margin: 0;
@@ -12,6 +26,7 @@
 
 body {
   font-family:
+    'Source Han Sans',
     'Inter',
     system-ui,
     -apple-system,

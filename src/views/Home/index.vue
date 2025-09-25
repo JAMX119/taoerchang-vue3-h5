@@ -1,16 +1,55 @@
 <script setup lang="ts">
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppBackground from '@/components/background.vue'
 
 defineOptions({
   name: 'HomeIndex',
 })
-
+// 路由
 const router = useRouter()
-
+// chebox
+const privacyCheckbox = ref<boolean>(false)
+const isShowTip = ref<boolean>(false)
+const isAnimating = ref<boolean>(false)
+// 发送弹幕
 const handleSendBarrageClick = () => {
+  if (!privacyCheckbox.value) {
+    isShowTip.value = true
+    return
+  }
   router.push('/send_barrage')
 }
+// 监听复选框变化
+watch(privacyCheckbox, (newValue) => {
+  if (newValue) {
+    isShowTip.value = false
+  }
+})
+
+// 监听提示显示状态，触发动画
+watch(isShowTip, (newValue) => {
+  if (newValue) {
+    // 强制重排以确保动画每次都能触发
+    isAnimating.value = false
+    // 使用$nextTick确保DOM更新后再触发动画
+    setTimeout(() => {
+      isAnimating.value = true
+    }, 10)
+  }
+})
+
+// 图片动画控制
+const imageAnimation = ref<string>('')
+
+// 组件挂载后触发图片动画
+onMounted(() => {
+  // 小延迟后触发动画，确保DOM已完全渲染
+  // setTimeout(() => {
+
+  // }, 100)
+  imageAnimation.value = 'fly-in'
+})
 </script>
 
 <template>
@@ -22,17 +61,25 @@ const handleSendBarrageClick = () => {
     </header>
     <!-- 首页主要内容 -->
     <main class="flex flex-1 flex-col items-center justify-center">
-      <div class="!px-4">
-        <img src="@/assets/images/large_screen.png" alt="large_screen" />
+      <div class="relative w-full !px-4 !mt-50">
+        <!-- 16:9 比例的视频尺寸容器 (使用Tailwind CSS) -->
+        <div class="w-full relative aspect-video overflow-hidden">
+          <div :class="['w-full h-full animate-' + imageAnimation]">
+            <img
+              class="object-fill w-full h-full"
+              src="@/assets/images/large_screen.png"
+              alt="large_screen"
+            />
+          </div>
+        </div>
       </div>
       <div class="w-50 !mt-20" @click="handleSendBarrageClick">
         <img src="@/assets/images/send_barrage.png" alt="btn" />
       </div>
-      <div class="!mt-20 text-[#815c48] font-bold flex items-center space-x-3 !mb-20">
-        <!-- 自定义复选框容器 -->
+      <div class="!mt-10 text-[#815c48] font-bold flex items-center space-x-3">
         <label for="privacy-checkbox" class="relative cursor-pointer flex items-center space-x-2">
           <!-- 隐藏原生复选框 -->
-          <input type="checkbox" id="privacy-checkbox" class="sr-only" />
+          <input v-model="privacyCheckbox" type="checkbox" id="privacy-checkbox" class="sr-only" />
           <!-- 自定义复选框 -->
           <div class="relative">
             <!-- 复选框背景 -->
@@ -61,6 +108,12 @@ const handleSendBarrageClick = () => {
           <span class="!ml-2">我已阅读并同意相关用户隐私协议</span>
         </label>
       </div>
+      <span
+        :style="{ visibility: isShowTip ? 'visible' : 'hidden' }"
+        :class="['!my-3 font-black text-[#f00]', { 'animate-shake': isAnimating }]"
+      >
+        请先勾选隐私条款
+      </span>
     </main>
   </AppBackground>
 </template>
@@ -73,5 +126,48 @@ const handleSendBarrageClick = () => {
 
 #privacy-checkbox:checked + .relative .opacity-0 {
   opacity: 1;
+}
+
+/* 抖动动画 */
+.animate-shake {
+  animation: shake 0.6s ease-in-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-4px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+/* 图片飞入动画 */
+.animate-fly-in {
+  animation: flyIn 1s forwards;
+}
+
+@keyframes flyIn {
+  from {
+    /* 初始状态：小尺寸、透明、在远处 */
+    opacity: 0;
+    transform: scale(0.8) translateZ(-10px);
+  }
+  to {
+    /* 结束状态：正常尺寸、完全清晰、当前位置 */
+    opacity: 1;
+    transform: scale(1) translateZ(0);
+  }
 }
 </style>
