@@ -2,30 +2,35 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppBackground from '@/components/background.vue'
+import { useHomeStore } from '@/stores/home'
 
 defineOptions({
   name: 'HomeIndex',
 })
 // 路由
 const router = useRouter()
+// 用户隐私存储
+const homeStore = useHomeStore()
 // chebox
-const privacyCheckbox = ref<boolean>(false)
 const isShowTip = ref<boolean>(false)
 const isAnimating = ref<boolean>(false)
 // 发送弹幕
 const handleSendBarrageClick = () => {
-  if (!privacyCheckbox.value) {
+  if (!homeStore.privacyCheckbox) {
     isShowTip.value = true
     return
   }
   router.push('/send_barrage')
 }
 // 监听复选框变化
-watch(privacyCheckbox, (newValue) => {
-  if (newValue) {
-    isShowTip.value = false
-  }
-})
+watch(
+  () => homeStore.privacyCheckbox,
+  (newValue) => {
+    if (newValue) {
+      isShowTip.value = false
+    }
+  },
+)
 
 // 监听提示显示状态，触发动画
 watch(isShowTip, (newValue) => {
@@ -44,10 +49,6 @@ const imageAnimation = ref<string>('')
 
 // 组件挂载后触发图片动画
 onMounted(() => {
-  // 小延迟后触发动画，确保DOM已完全渲染
-  // setTimeout(() => {
-
-  // }, 100)
   imageAnimation.value = 'fly-in'
 })
 </script>
@@ -55,15 +56,15 @@ onMounted(() => {
 <template>
   <AppBackground>
     <!-- 首页顶部导航 -->
-    <header class="flex items-center justify-between !p-6">
+    <header class="flex items-center justify-between !px-6 !pt-8 !pb-4">
       <div class="iconfont icon-bilibili text-[#e84075] !text-4xl"></div>
       <img src="@/assets/images/logo.png" alt="logo" class="w-30" />
     </header>
     <!-- 首页主要内容 -->
     <main class="flex flex-1 flex-col items-center justify-center">
-      <div class="relative w-full !px-4 !mt-50">
+      <div class="relative w-full !px-4 !mt-28">
         <!-- 16:9 比例的视频尺寸容器 (使用Tailwind CSS) -->
-        <div class="w-full relative aspect-video overflow-hidden">
+        <div class="w-full relative overflow-hidden">
           <div :class="['w-full h-full animate-' + imageAnimation]">
             <img
               class="object-fill w-full h-full"
@@ -73,13 +74,18 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div class="w-50 !mt-20" @click="handleSendBarrageClick">
+      <div class="w-50 !mt-15" @click="handleSendBarrageClick">
         <img src="@/assets/images/send_barrage.png" alt="btn" />
       </div>
-      <div class="!mt-10 text-[#815c48] font-bold flex items-center space-x-3">
+      <div class="!mt-8 text-[#815c48] font-bold flex items-center space-x-3">
         <label for="privacy-checkbox" class="relative cursor-pointer flex items-center space-x-2">
           <!-- 隐藏原生复选框 -->
-          <input v-model="privacyCheckbox" type="checkbox" id="privacy-checkbox" class="sr-only" />
+          <input
+            v-model="homeStore.privacyCheckbox"
+            type="checkbox"
+            id="privacy-checkbox"
+            class="sr-only"
+          />
           <!-- 自定义复选框 -->
           <div class="relative">
             <!-- 复选框背景 -->

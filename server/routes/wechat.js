@@ -128,7 +128,8 @@ router.get('/userinfo', async (req, res, next) => {
 
       // 3. 返回用户信息
       res.json({
-        success: true,
+        code: 0,
+        message: '获取用户信息成功',
         data: userInfo,
       })
     } catch (error) {
@@ -174,10 +175,10 @@ router.get('/auth-url', (req, res) => {
     // 构建微信授权链接
     const encodedRedirectUri = encodeURIComponent(redirectUri)
     const state = 'STATE_' + Date.now() // 添加时间戳避免重复
-    
+
     let authUrl
     let message = ''
-    
+
     if (WX_APPID) {
       // 如果配置了WX_APPID，生成真实的授权链接
       authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${WX_APPID}&redirect_uri=${encodedRedirectUri}&response_type=code&scope=${scope}&state=${state}#wechat_redirect`

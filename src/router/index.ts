@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useUserInfoStore } from '@/stores/userinfo' // 导入 useUserInfoStore
+import { useLoginStore } from '@/stores/login' // 导入 useLoginStore
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -7,7 +7,7 @@ const router = createRouter({
     {
       path: '/',
       name: '/',
-      redirect: '/authorize',
+      redirect: import.meta.env.MODE !== 'development' ? '/authorize' : '/home',
     },
     {
       path: '/authorize',
@@ -32,15 +32,17 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from) => {
-  const { isLoggedIn } = useUserInfoStore()
-  if (to.name == 'large_screen' && !isLoggedIn) {
+if (import.meta.env.MODE !== 'development') {
+  router.beforeEach((to, from) => {
+    const { isLoggedIn } = useLoginStore()
+    if (to.name === 'large_screen') {
+      return true
+    }
+    if (to.name !== 'authorize' && !isLoggedIn) {
+      return { name: 'authorize' }
+    }
     return true
-  }
-  if (to.name !== 'authorize' && !isLoggedIn) {
-    return { name: 'authorize' }
-  }
-  return true
-})
+  })
+}
 
 export default router

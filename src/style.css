@@ -157,3 +157,36 @@ img {
     font-size: 14px;
   }
 }
+
+.welcome-message {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.welcome-message .welcome {
+  background-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.welcome-message .el-message {
+  background-color: transparent;
+  position: initial;
+}
+
+.welcome-message .el-message .el-icon {
+  display: none;
+}
+
+.welcome-message .el-message.is-center {
+  margin: 0.5rem auto !important;
+}

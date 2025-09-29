@@ -5,7 +5,7 @@ import type { RequestConfig, ApiResponse, CancelRequestMap } from '@/types'
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: '/api', // 所有请求的基础URL
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api', // 所有请求的基础URL
   timeout: 10000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json',
@@ -48,7 +48,8 @@ service.interceptors.request.use(
     // 2. 添加token等认证信息
     const token = localStorage.getItem('token')
     if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
+      // config.headers.Authorization = `Bearer ${token}`
+      config.headers.token = token
     }
 
     // 3. 添加时间戳，防止缓存
@@ -75,7 +76,7 @@ service.interceptors.response.use(
     const res = response.data
 
     // 4. 统一处理响应数据
-    if (res.success) {
+    if (+res.code === 200) {
       return res.data
     } else {
       // 5. 处理业务错误
@@ -93,18 +94,18 @@ service.interceptors.response.use(
     if (error.code === 'ECONNABORTED' && error.message?.includes('timeout')) {
       // 请求超时
       console.error('请求超时，请稍后重试')
-      alert('请求超时，请稍后重试')
+      // alert('请求超时，请稍后重试')
     } else if (response) {
       // 服务器返回错误状态码
       handleError(response.status, response.data?.message || '请求失败')
     } else if (!window.navigator.onLine) {
       // 离线状态
       console.error('网络连接已断开，请检查网络')
-      alert('网络连接已断开，请检查网络')
+      // alert('网络连接已断开，请检查网络')
     } else {
       // 其他错误
       console.error('请求失败，请稍后重试')
-      alert('请求失败，请稍后重试')
+      // alert('请求失败，请稍后重试')
     }
 
     // 7. 请求重试机制
@@ -282,5 +283,15 @@ export function patch<T = unknown>(
   return service.patch(url, data, config)
 }
 
+/**
+ * 将参数对象转换为查询字符串
+ * @param params 参数对象
+ * @returns 查询字符串
+ */
+export function paramsToQuery(params: Record<string, unknown>) {
+  return new URLSearchParams(
+    Object.entries(params).map(([key, value]) => [key, String(value)]),
+  ).toString()
+}
 // 导出默认的axios实例和请求方法
 export default service

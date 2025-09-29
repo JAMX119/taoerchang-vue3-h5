@@ -1,147 +1,134 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import Danmaku from 'danmaku-vue'
 import { useBarrageStore } from '@/stores/barrage'
-import { useUserInfoStore } from '@/stores/userinfo'
+import type { WelcomeBarrage } from '@/types'
+import { ElMessage, ElCarousel, ElCarouselItem } from 'element-plus'
+console.log(ElCarousel, ElCarouselItem)
 
 defineOptions({
   name: 'LargeScreen',
 })
+// 弹幕轨道
+const channels = 8
+// 弹幕速度
+const speeds = 60
 // 弹幕列表
 const barrageStore = useBarrageStore()
-const userInfoStore = useUserInfoStore()
-// 欢迎文本动画控制
-const welcomeVisible = ref<boolean>(true)
-const welcomeAnimation = ref<string>('fade-in')
 // 弹幕组件实例
-const danmakuRef = ref<InstanceType<typeof Danmaku> | null>(null)
+const danmakuRef = ref<InstanceType<typeof Danmaku> | null | { reset: () => void }>(null)
+// 视频引用，用于手动控制播放
+const videoRef = ref<HTMLVideoElement | null>(null)
+
+// 视频加载完成后的处理函数，确保自动播放
+const handleVideoLoaded = () => {
+  if (videoRef.value) {
+    // 尝试播放，如果浏览器限制自动播放，会返回一个Promise
+    videoRef.value.play().catch((error) => {
+      console.warn('视频自动播放失败，尝试手动播放:', error)
+      // 在某些情况下可能需要用户交互才能播放
+      // 这里可以添加一个备用方案或提示
+    })
+  }
+}
+const onMassage = (element: { nick_name: string }) => {
+  const thatMsg = ElMessage({
+    duration: 0,
+    appendTo: '.welcome-message',
+    dangerouslyUseHTMLString: true,
+    message: `<div class="welcome whitespace-pre-line text-white text-center text-[3rem]/[4rem]">欢迎${element.nick_name}
+来到bilibili纪录片创新空间
+</div>`,
+  })
+
+  // 1秒后关闭消息
+  setTimeout(() => {
+    thatMsg.close()
+  }, 3000)
+}
+
+// 定义延迟函数
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// 使用async/await实现延迟遍历
+const showMessagesWithDelay = async (array?: WelcomeBarrage[]) => {
+  if (!array || array.length === 0) {
+    return
+  }
+
+  for (const element of array) {
+    // 显示当前消息
+    onMassage(element)
+    // 等待1秒后再继续下一个
+    await delay(1000)
+  }
+}
+
+barrageStore.intervalGetBarrageList(() => {
+  if (danmakuRef.value) {
+    danmakuRef.value.reset()
+  }
+  // 调用异步函数显示消息
+  showMessagesWithDelay(barrageStore.welcomeList || [])
+})
 
 // 组件挂载后触发欢迎文本动画
 onMounted(() => {
-  // 显示2秒后开始淡出
-  setTimeout(() => {
-    welcomeAnimation.value = 'fade-out'
-    // 淡出动画完成后隐藏
-    setTimeout(() => {
-      welcomeVisible.value = false
-    }, 400)
-  }, 2000)
+  window?.addEventListener('resize', () => {
+    danmakuRef.value?.reset()
+  })
+  barrageStore.activeGetBackground()
+})
+
+onUnmounted(() => {
+  barrageStore.stopIntervalGetBarrageList()
 })
 </script>
 
 <template>
-  <!-- 首页主要内容 -->
   <main class="h-screen flex flex-1 flex-col items-center justify-center">
-    <!-- 16:9 比例的视频尺寸容器 (使用Tailwind CSS) -->
-    <div class="w-full relative aspect-4/3 bg-black">
+    <div class="w-screen h-screen relative bg-black">
+      <template v-if="Array.isArray(barrageStore.background) && barrageStore.background.length">
+        <el-carousel height="100vh" arrow="never" indicator-position="none" :autoplay="false">
+          <el-carousel-item
+            v-for="(item, index) in barrageStore.background as { pic_url: string }[]"
+            :key="'background' + index"
+          >
+            <img class="w-screen h-screen object-cover" :src="item.pic_url" alt="background" />
+          </el-carousel-item>
+        </el-carousel>
+      </template>
+      <template v-else>
+        <video
+          ref="videoRef"
+          autoplay
+          loop
+          muted
+          playsinline
+          preload="auto"
+          :src="barrageStore.background as string"
+          class="w-screen h-screen object-cover"
+          @loadeddata="handleVideoLoaded"
+        ></video>
+      </template>
       <Danmaku
         class="!absolute top-10 left-0 bottom-10 w-full"
         loop
         useSlot
-        :channels="8"
-        :speeds="60"
-        :danmus="barrageStore.danmus"
+        :channels="channels"
+        :speeds="speeds"
+        v-model:danmus="barrageStore.danmus as []"
         ref="danmakuRef"
       >
         <template #dm="{ danmu }">
-          <div class="danmu-item">
-            <div class="text-[2rem] line-height-[5rem] mx-10" :style="{ color: danmu.color }">
-              {{ danmu.content }}
-            </div>
+          <div class="danmu-item text-[2rem] leading-[4rem]" :style="{ color: danmu.font_color }">
+            {{ danmu.content }}
           </div>
         </template>
       </Danmaku>
-      <div
-        v-show="welcomeVisible"
-        :class="[
-          'welcome absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-bold w-[90%] text-center text-[1.3rem] text-[#E5C241]',
-          'animate-' + welcomeAnimation,
-        ]"
-      >
-        欢迎{{ userInfoStore.wechatUserInfo?.nickname || 'xxx' }}来到bilibili纪录片创新空间
-      </div>
     </div>
+    <div class="welcome-message"></div>
   </main>
 </template>
 
-<style scoped>
-/* 自定义复选框样式 */
-#privacy-checkbox:checked + .relative .border-\[\#815c48\] {
-  background-color: #815c48;
-}
-
-#privacy-checkbox:checked + .relative .opacity-0 {
-  opacity: 1;
-}
-
-.welcome {
-  background-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(4px);
-  padding: 1rem;
-  border-radius: 0.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-/* 抖动动画 */
-.animate-shake {
-  animation: shake 0.6s ease-in-out;
-}
-
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  10%,
-  30%,
-  50%,
-  70%,
-  90% {
-    transform: translateX(-4px);
-  }
-  20%,
-  40%,
-  60%,
-  80% {
-    transform: translateX(4px);
-  }
-}
-
-/* 欢迎文本淡入动画 */
-.animate-fade-in {
-  animation: fadeInScale 0.5s ease-out;
-}
-
-/* 欢迎文本淡出动画 */
-.animate-fade-out {
-  animation: fadeOutScale 0.5s ease-in;
-}
-
-/* 淡入并放大效果 */
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: translate(0%, 0%) scale(0.8);
-  }
-  50% {
-    opacity: 1;
-    transform: translate(0%, 0%) scale(1.05);
-  }
-  to {
-    opacity: 1;
-    transform: translate(0%, 0%) scale(1);
-  }
-}
-
-/* 淡出并缩小效果 */
-@keyframes fadeOutScale {
-  from {
-    opacity: 1;
-    transform: translate(0%, 0%) scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: translate(0%, 0%) scale(0.8);
-  }
-}
-</style>
+<style scoped></style>

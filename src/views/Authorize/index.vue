@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserInfoStore } from '@/stores/userinfo'
-import { getCodeFromUrl, removeCodeFromUrl } from '@/utils/wechat-auth'
+import { useLoginStore } from '@/stores/login'
+import { buildWechatAuthUrl, getCodeFromUrl, removeCodeFromUrl } from '@/utils/wechat-auth'
 
 defineOptions({
   name: 'AuthorizeIndex',
@@ -11,7 +11,7 @@ defineOptions({
 // 路由
 const router = useRouter()
 // store
-const store = useUserInfoStore()
+const loginStore = useLoginStore()
 // data
 const loading = ref(false)
 const error = ref('')
@@ -30,14 +30,18 @@ const handleWechatAuth = async () => {
       // 有code，尝试获取用户信息
       console.log('获取到授权code:', code)
       // 调用store的action获取用户信息
-      await store.actionGetUserInfo(code)
+      await loginStore.actionGetUserInfo(code)
+      // 调用store的action获取token
+      await loginStore.actionPostToekn()
       // 移除URL中的code参数，避免重复授权
       removeCodeFromUrl()
       // 授权成功后重定向到首页或其他页面
       replaceHome()
     } else {
       // 没有code，检查本地是否有用户信息
-      if (store.wechatUserInfo) {
+      if (loginStore.wechatUserInfo) {
+        // 调用store的action获取token
+        await loginStore.actionPostToekn()
         replaceHome()
         return
       }
@@ -46,7 +50,8 @@ const handleWechatAuth = async () => {
       // 构建回调URL（当前页面URL）
       const redirectUri = window.location.origin + window.location.pathname
       try {
-        const authUrl = await store.actionGetAuthUrl(redirectUri)
+        // const authUrl = await store.actionGetAuthUrl(redirectUri)
+        const authUrl = buildWechatAuthUrl(redirectUri)
         // 跳转到微信授权页面
         window.location.href = authUrl as string
       } catch (error) {
@@ -68,34 +73,30 @@ onMounted(() => {
 
 <template>
   <div class="authorize-container">
-    <div class="authorize-content">
-      <!-- 加载状态 -->
+    <!-- <div class="authorize-content">
       <div v-if="loading" class="loading-state">
         <div class="loading-spinner"></div>
         <p class="loading-text">正在进行微信授权...</p>
       </div>
 
-      <!-- 错误状态 -->
       <div v-else-if="error" class="error-state">
         <p class="error-text">{{ error }}</p>
-        <button class="retry-button" @click="handleWechatAuth">重新授权</button>
+        <button class="retry-button h-20" @click="handleWechatAuth">重新授权</button>
       </div>
 
-      <!-- 授权成功状态 -->
-      <div v-else-if="store.wechatUserInfo" class="success-state">
+      <div v-else-if="loginStore.wechatUserInfo" class="success-state">
         <div class="user-avatar">
-          <img :src="store.wechatUserInfo.avatarUrl" alt="用户头像" />
+          <img :src="loginStore.wechatUserInfo.avatar" alt="用户头像" />
         </div>
-        <h3 class="user-nickname">{{ store.wechatUserInfo.nickname || '微信用户' }}</h3>
+        <h3 class="user-nickname">{{ loginStore.wechatUserInfo.nick_name || '微信用户' }}</h3>
         <p class="authorize-success-text">授权成功，正在跳转到首页...</p>
       </div>
 
-      <!-- 默认状态 -->
       <div v-else class="default-state">
         <p class="welcome-text">欢迎使用微信授权登录</p>
         <button class="auth-button" @click="handleWechatAuth">开始微信授权</button>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
